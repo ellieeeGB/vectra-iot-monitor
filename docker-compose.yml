@@ -1,0 +1,31 @@
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Se incrusta al compilar. Debe ser la URL del backend vista desde el NAVEGADOR.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Datos ficticios. Actívalo solo para demos: docker compose --profile sim up -d --build
+  simulator:
+    profiles: ["sim"]
+    build: ./simulator
+    environment:
+      API_URL: http://backend:8000
+      DEVICE_CODE: ESP32-DEMO-01
+      INTERVAL_S: "3"
+    depends_on:
+      - backend
+    restart: unless-stopped
