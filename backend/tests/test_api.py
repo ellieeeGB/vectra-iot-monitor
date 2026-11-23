@@ -15,7 +15,13 @@ client = TestClient(app)
 
 @pytest.fixture()
 def dev():
-    return f"TEST-{uuid.uuid4().hex[:8]}"
+    code = f"TEST-{uuid.uuid4().hex[:8]}"
+    yield code
+    # Limpieza: borra el dispositivo de prueba (cascada: lecturas y recorridos).
+    import psycopg
+    with psycopg.connect(os.environ["DATABASE_URL"], prepare_threshold=None) as conn:
+        conn.execute("delete from devices where device_code = %s", (code,))
+        conn.execute("delete from logs where message like %s", (f"%{code}%",))
 
 
 def test_health():

@@ -322,12 +322,12 @@ def end_trip(trip_id: int):
         with db() as conn:
             row = conn.execute(
                 "update trips set ended_at = now() where id = %s and ended_at is null "
-                "returning id, ended_at",
+                "returning id, ended_at, (select device_code from devices where id = device_id) as device_code",
                 (trip_id,),
             ).fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail="Recorrido no encontrado o ya cerrado")
-            write_log(conn, "INFO", f"Recorrido {trip_id} finalizado")
-            return row
+            write_log(conn, "INFO", f"Recorrido {trip_id} finalizado en {row['device_code']}")
+            return {"id": row["id"], "ended_at": row["ended_at"]}
     except psycopg.Error as exc:
         db_error(exc)
